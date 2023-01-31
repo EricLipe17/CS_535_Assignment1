@@ -37,7 +37,7 @@ with open(properties_file) as f:
 
 
 # Create the spark context
-spark = SparkSession.builder.master.appName('Assignment_1').getOrCreate()
+spark = SparkSession.builder.appName('Assignment_1').getOrCreate()
 sqlContext = SQLContext(spark)
 
 # Create a Vertex DataFrame with unique ID column "id"
