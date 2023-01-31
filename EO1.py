@@ -57,8 +57,6 @@ for year in years:
                  num_out_edges))
 
 print("test")
-print(f"E: {g.edges.count()}")
-print("test")
-print(f"V: {g.vertices.count()}")
+print(f"V: {g.vertices.count()}, E: {g.edges.count()}")
 print(data)
 print("\n\n\n")
