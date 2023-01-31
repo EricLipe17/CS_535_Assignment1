@@ -32,7 +32,7 @@ with open(properties_file) as f:
 
             # Only interested in the year the paper was published
             vertex_prop[1] = vertex_prop[1][:4]
-            if all_vertices[vertex_prop[0]]:
+            if vertex_prop[0] in all_vertices:
                 all_vertices[vertex_prop[0]].append(tuple(vertex_prop))
 
 
