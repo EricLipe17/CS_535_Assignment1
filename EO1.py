@@ -15,7 +15,9 @@ edges = list()
 with open(edges_file) as f:
     for line in f:
         if line[0] != "#":
-            edges.append(tuple(line.split()))
+            e = line.split()
+            e.append("cites")
+            edges.append(tuple(e))
 
 # Get vertices
 vertices = list()
