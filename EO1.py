@@ -36,6 +36,7 @@ with open(vertex_file) as f:
 
 # Create the spark context
 spark = SparkSession.builder.appName('Assignment_1').getOrCreate()
+spark.setLogLevel("WARN")
 sqlContext = SQLContext(spark)
 
 # Create a Vertex DataFrame with unique ID column "id"
