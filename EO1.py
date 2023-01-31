@@ -56,7 +56,7 @@ for year in years:
     data.append((year, num_vertices,
                  num_out_edges))
 
-print("test")
+print("\n\n\n")
 print(f"V: {g.vertices.count()}, E: {g.edges.count()}")
 print(data)
 print("\n\n\n")
