@@ -52,7 +52,11 @@ for year in years:
     filtered_g = g.filterVertices(f"published_year <= {year}")
     num_vertices = filtered_g.vertices.count()
     num_out_edges = filtered_g.outDegrees.groupby().sum("outDegree").collect()[0][0]
-    data.append((num_vertices,
+    data.append((year, num_vertices,
                  num_out_edges))
 
+print("\n\n\nPrinting total vertices and edges")
+print(f"V: {g.vertices.count()}")
+print(f"E: {g.edges.count()}")
 print(data)
+print("\n\n\n")
