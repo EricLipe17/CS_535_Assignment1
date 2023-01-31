@@ -17,7 +17,7 @@ with open(edges_file) as f:
         if line[0] != "#":
             vertices = line.split()
             for vertex in vertices:
-                all_vertices[vertex] = list()
+                all_vertices[vertex] = None
             vertices.append("cites")
             edges.append(tuple(vertices))
 
@@ -33,8 +33,7 @@ with open(properties_file) as f:
             # Only interested in the year the paper was published
             vertex_prop[1] = vertex_prop[1][:4]
             if vertex_prop[0] in all_vertices:
-                all_vertices[vertex_prop[0]].append(tuple(vertex_prop))
-
+                all_vertices[vertex_prop[0]] = tuple(vertex_prop)
 
 # Create the spark context
 spark = SparkSession.builder.appName('Assignment_1').getOrCreate()
