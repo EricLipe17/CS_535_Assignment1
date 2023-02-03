@@ -38,12 +38,13 @@ sqlContext = SQLContext(spark)
 
 # Create a Vertex DataFrame with unique ID column "id"
 vertex_df = sqlContext.createDataFrame(vertices, ["id", "published_year"])
-# Create an Edge DataFrame with "src" and "dst" columns
-edge_df = sqlContext.createDataFrame(edges, ["src", "dst", "relationship"])
-
-data = list()
-num_vertices = 0
-for year in years:
-    num_vertices += vertex_df.filter(vertex_df.published_year == year).groupby(vertex_df.published_year).count().collect()[0][1]
-    data.append((year, num_vertices))
-print(data)
+vertex_df.show(10)
+# # Create an Edge DataFrame with "src" and "dst" columns
+# edge_df = sqlContext.createDataFrame(edges, ["src", "dst", "relationship"])
+#
+# data = list()
+# num_vertices = 0
+# for year in years:
+#     num_vertices += vertex_df.filter(vertex_df.published_year == year).groupby(vertex_df.published_year).count().collect()[0][1]
+#     data.append((year, num_vertices))
+# print(data)
