@@ -1,6 +1,7 @@
 import os
 from pyspark.sql import SparkSession
 from pyspark.sql import SQLContext
+from pyspark.sql.functions import sum
 
 cwd = os.getcwd()
 print(cwd)
