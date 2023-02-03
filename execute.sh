@@ -6,4 +6,4 @@ then
   exit 1
 fi
 
-$SPARK_HOME/bin/spark-submit --packages graphframes:graphframes:0.8.2-spark3.2-s_2.12 $1
+$SPARK_HOME/bin/spark-submit $1
