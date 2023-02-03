@@ -46,6 +46,9 @@ edge_df = sqlContext.createDataFrame(edges, ["src", "dst", "relationship"])
 data = list()
 num_vertices = 0
 for year in years:
-    num_vertices += vertex_df.filter(vertex_df.published_year == year).groupby(vertex_df.published_year).count().collect()[0][1]
+    vertices_by_year_df = vertex_df.filter(vertex_df.published_year == year)
+    num_vertices += vertices_by_year_df.groupby(vertex_df.published_year).count().collect()[0][1]
+    num_edges = vertices_by_year_df.join(edge_df, vertices_by_year_df.id == edge_df.src, "inner")
+    num_edges.show(10)
     data.append((year, num_vertices))
 print(data)
