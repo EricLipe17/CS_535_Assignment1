@@ -19,19 +19,17 @@ with open(edges_file) as f:
             edges.append(tuple(e))
 
 # Get vertices
-vertices = list()
+vertices = set()
 with open(vertex_file) as f:
     for line in f:
         if line[0] != "#":
             vertex_prop = line.split()
             # TODO: This does not handle cross-referenced papers yet. Because of this the number of nodes in the
-            #  graph is incorrect!
+            #  graph is incorrect according to citations.txt!
             if vertex_prop[0][:2] == "11":
-                continue
+                vertex_prop[0] = vertex_prop[0][2:]
 
-            # Only interested in the year the paper was published
-            vertex_prop[1] = vertex_prop[1][:4]
-            vertices.append(tuple(vertex_prop))
+            vertices.add(tuple(vertex_prop))
 
 # Create the spark context
 spark = SparkSession.builder.appName('Assignment_1').getOrCreate()
