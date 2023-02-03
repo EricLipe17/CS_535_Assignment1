@@ -52,7 +52,7 @@ for year in years:
     edges_by_year = vertices_by_year_df.join(edge_df, vertices_by_year_df.id == edge_df.src, "inner")
     edges_by_year = edges_by_year.select(edges_by_year.src)
     edges_by_year = edges_by_year.groupby(edges_by_year.src).count()
-    edges_by_year.select(sum(edges_by_year.count))
+    edges_by_year = edges_by_year.select(sum(edges_by_year.count))
     edges_by_year.show(10)
     data.append((year, num_vertices))
 print(data)
