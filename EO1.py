@@ -1,7 +1,6 @@
 import os
 from pyspark.sql import SparkSession
 from pyspark.sql import SQLContext
-from graphframes import *
 
 cwd = os.getcwd()
 print(cwd)
@@ -44,19 +43,10 @@ vertex_df = sqlContext.createDataFrame(vertices, ["id", "published_year"])
 # Create an Edge DataFrame with "src" and "dst" columns
 edge_df = sqlContext.createDataFrame(edges, ["src", "dst", "relationship"])
 
-# Create the graph
-g = GraphFrame(vertex_df, edge_df)
-
-# Analyze graphs
 data = list()
 for year in years:
-    filtered_g = g.filterVertices(f"published_year <= {year}")
-    num_vertices = filtered_g.vertices.count()
-    num_out_edges = filtered_g.outDegrees.groupby().sum("outDegree").collect()[0][0]
-    data.append((year, num_vertices,
-                 num_out_edges))
+    num_vertices = vertex_df.filter(vertex_df.published_year <= year).groupby(vertex_df.published_year).count().collect()[0][0]
+    data.append((year, num_vertices))
 
-print("\n\n\n")
-print(f"V: {g.vertices.count()}, E: {g.edges.count()}")
 print(data)
-print("\n\n\n")
+
