@@ -29,6 +29,8 @@ with open(vertex_file) as f:
             if vertex_prop[0][:2] == "11":
                 vertex_prop[0] = vertex_prop[0][2:]
 
+            vertex_prop[1] = vertex_prop[1][:4]
+
             vertices.add(tuple(vertex_prop))
 
 # Create the spark context
