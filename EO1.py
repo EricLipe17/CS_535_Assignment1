@@ -48,7 +48,8 @@ num_vertices = 0
 for year in years:
     vertices_by_year_df = vertex_df.filter(vertex_df.published_year == year)
     num_vertices += vertices_by_year_df.groupby(vertex_df.published_year).count().collect()[0][1]
-    num_edges = vertices_by_year_df.join(edge_df, vertices_by_year_df.id == edge_df.src, "inner").groupby(vertex_df.src).count()
-    num_edges.show(10)
+    edges_by_year = vertices_by_year_df.join(edge_df, vertices_by_year_df.id == edge_df.src, "inner")
+    edges_by_year.groupby(edges_by_year.src).count()
+    edges_by_year.show(10)
     data.append((year, num_vertices))
 print(data)
