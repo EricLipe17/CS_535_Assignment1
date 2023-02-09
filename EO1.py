@@ -8,7 +8,7 @@ print(cwd)
 
 edges_file = os.path.join(cwd, "citations.txt")
 vertex_file = os.path.join(cwd, "published-dates.txt")
-years = [str(year) for year in range(2002, 2003)]
+years = [str(year) for year in range(1993, 2003)]
 
 # Get all edges
 edges = list()
