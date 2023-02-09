@@ -53,4 +53,6 @@ for year in years:
     edges_by_year = edges_by_year.select(edges_by_year.src)
     num_edges = edges_by_year.groupby(edges_by_year.src).count().select(sum("count")).collect()[0][0]
     data.append((year, num_vertices, num_edges))
+
+print(f"V: {vertex_df.count()}, E: {edge_df.count()}")
 print(data)
