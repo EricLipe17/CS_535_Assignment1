@@ -59,6 +59,7 @@ for year in years:
 
     # Store year and counts
     data.append((year, num_vertices, num_edges))
+    print(data)
 
 print(f"V: {vertex_df.count()}, E: {edge_df.count()}")
 print(data)
