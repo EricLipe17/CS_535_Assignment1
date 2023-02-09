@@ -54,7 +54,6 @@ for year in years:
 
     # Collect number of out edges by year
     edges_by_year = vertices_by_year_df.join(edge_df, vertices_by_year_df.id == edge_df.src, "inner")
-    edges_by_year = edges_by_year.select(edges_by_year.src)
     num_edges = edges_by_year.groupby(edges_by_year.src).count().select(sum("count")).collect()[0][0]
     print(edges_by_year.count())
 
