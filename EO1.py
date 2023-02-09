@@ -8,7 +8,7 @@ print(cwd)
 
 edges_file = os.path.join(cwd, "citations.txt")
 vertex_file = os.path.join(cwd, "published-dates.txt")
-years = [str(year) for year in range(1993, 2003)]
+years = [str(year) for year in range(2002, 2003)]
 
 # Get all edges
 edges = list()
@@ -47,11 +47,18 @@ edge_df = sqlContext.createDataFrame(edges, ["src", "dst", "relationship"])
 data = list()
 num_vertices = 0
 for year in years:
+    # Collect number of vertices by year
     vertices_by_year_df = vertex_df.filter(vertex_df.published_year <= year)
-    num_vertices = vertices_by_year_df.groupby(vertex_df.published_year).count().collect()[0][1]
+    num_vertices = vertices_by_year_df.count()
+    print(vertices_by_year_df.count())
+
+    # Collect number of out edges by year
     edges_by_year = vertices_by_year_df.join(edge_df, vertices_by_year_df.id == edge_df.src, "inner")
     edges_by_year = edges_by_year.select(edges_by_year.src)
     num_edges = edges_by_year.groupby(edges_by_year.src).count().select(sum("count")).collect()[0][0]
+    print(edges_by_year.count())
+
+    # Store year and counts
     data.append((year, num_vertices, num_edges))
 
 print(f"V: {vertex_df.count()}, E: {edge_df.count()}")
