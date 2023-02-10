@@ -28,8 +28,6 @@ with open(vertex_file) as f:
     for line in f:
         if line[0] != "#":
             vertex_prop = line.split()
-            # TODO: This does not handle cross-referenced papers yet. Because of this the number of nodes in the
-            #  graph is incorrect according to citations.txt!
             if vertex_prop[0][:2] == "11":
                 vertex_prop[0] = vertex_prop[0][2:]
 
