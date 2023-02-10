@@ -12,12 +12,15 @@ years = [str(year) for year in range(1993, 2003)]
 
 # Get all edges
 edges = list()
+vertices_dict = dict()
 with open(edges_file) as f:
     for line in f:
         if line[0] != "#":
             e = line.split()
             e.append("cites")
             edges.append(tuple(e))
+            vertices_dict[e[0]] = None
+            vertices_dict[e[1]] = None
 
 # Get vertices
 vertices = set()
@@ -31,8 +34,11 @@ with open(vertex_file) as f:
                 vertex_prop[0] = vertex_prop[0][2:]
 
             vertex_prop[1] = vertex_prop[1][:4]
+            if vertex_prop[0] in vertices_dict:
+                vertices_dict[vertex_prop[0]] = vertex_prop[1]
 
-            vertices.add(tuple(vertex_prop))
+for key, val in vertices_dict.items():
+    vertices.add((key, val))
 
 # Create the spark context
 spark = SparkSession.builder.appName('Assignment_1').getOrCreate()
