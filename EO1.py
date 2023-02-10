@@ -56,16 +56,13 @@ for year in years:
     # Collect number of vertices by year
     vertices_by_year_df = vertex_df.filter(vertex_df.published_year <= year)
     num_vertices = vertices_by_year_df.count()
-    print(vertices_by_year_df.count())
 
     # Collect number of out edges by year
     edges_by_year = vertices_by_year_df.join(edge_df, vertices_by_year_df.id == edge_df.src, "inner")
     num_edges = edges_by_year.groupby(edges_by_year.src).count().select(sum("count")).collect()[0][0]
-    print(edges_by_year.count())
 
     # Store year and counts
     data.append((year, num_vertices, num_edges))
-    print(data)
 
 print(f"V: {vertex_df.count()}, E: {edge_df.count()}")
 print(data)
