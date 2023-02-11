@@ -4,7 +4,6 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.sources.In;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -17,7 +16,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.IntStream;
 
-import static org.apache.spark.sql.functions.sum;
+import static org.apache.spark.sql.functions.*;
 
 public class Main {
     public static void main(String[] args)  {
@@ -78,8 +77,7 @@ public class Main {
         // Create the spark context
         SparkSession spark = SparkSession
                 .builder()
-                .appName("Java Spark SQL basic example")
-                .config("spark.some.config.option", "some-value")
+                .appName("Assignment1")
                 .getOrCreate();
         spark.sparkContext().setLogLevel("WARN");
         SQLContext sqlContext = new SQLContext(spark);
@@ -107,12 +105,14 @@ public class Main {
 
         for (long year : years) {
             // Collect number of vertices by year
-            Dataset<Row> vertices_by_year_df = vertex_df.filter("published_year" <= year);
+            Dataset<Row> vertices_by_year_df = vertex_df.filter(vertex_df.col("published_year").$less$eq(year));
+            vertices_by_year_df.show(10);
             num_vertices = vertices_by_year_df.count();
 
             // Collect number of out edges by year
-            Dataset<Row> edges_by_year = vertices_by_year_df.join(edge_df, "id" == "src", "inner");
-            edges_by_year.groupBy("src").count().select(sum("count")).show();
+            Dataset<Row> edges_by_year = vertices_by_year_df.join(edge_df, vertices_by_year_df.col("id").equalTo(edge_df.col("src")), "inner");
+            edges_by_year.groupBy("src").count().select(sum("count")).show(10);
+
             // Store data
             data.add(new Long[]{year, num_vertices, num_edges});
         }
