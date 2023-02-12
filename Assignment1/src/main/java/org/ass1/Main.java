@@ -21,8 +21,8 @@ import static org.apache.spark.sql.functions.*;
 
 public class Main {
     public static void main(String[] args)  {
-        Path edge_path = Paths.get("citations.txt");
-        Path vertices_path = Paths.get("published-dates.txt");
+        Path edge_path = Paths.get(args[0]);
+        Path vertices_path = Paths.get(args[1]);
         List<Integer> years = IntStream.range(1993, 2003).boxed().collect(Collectors.toList());
 
         // Get all edge and vertices
