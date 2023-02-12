@@ -1,9 +1,7 @@
 package org.ass1;
 
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SQLContext;
-import org.apache.spark.sql.SparkSession;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.sql.*;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
@@ -26,7 +24,7 @@ public class Main {
         List<Integer> years = IntStream.range(1993, 2003).boxed().collect(Collectors.toList());
 
         // Get all edge and vertices
-        ArrayList<String[]> edges = new ArrayList<>();
+        ArrayList<Row> edges = new ArrayList<>();
         HashMap<String, String> vertices_map = new HashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(edge_path.toAbsolutePath().toString()))) {
             String line;
@@ -39,7 +37,7 @@ public class Main {
                 complete_edge[0] = edge[0];
                 complete_edge[1] = edge[1];
                 complete_edge[2] = "cites";
-                edges.add(complete_edge);
+                edges.add(RowFactory.create(complete_edge));
                 vertices_map.put(edge[0], "");
                 vertices_map.put(edge[1], "");
             }
@@ -69,9 +67,9 @@ public class Main {
             System.out.println(e.getMessage());
         }
 
-        List<String[]> vertices = new ArrayList<>();
+        List<Row> vertices = new ArrayList<>();
         for (Map.Entry<String, String> entry : vertices_map.entrySet()) {
-            vertices.add(new String[]{entry.getKey(), entry.getValue()});
+            vertices.add(RowFactory.create(entry.getKey(), entry.getValue()));
         }
 
         // Create the spark context
@@ -93,10 +91,11 @@ public class Main {
                 DataTypes.createStructField("relationship", DataTypes.StringType, true)
         });
 
+
         // Create a Vertex DataFrame with unique ID column "id"
-        Dataset<Row> vertex_df = sqlContext.createDataFrame(vertices, vertex_df_cols.getClass());
+        Dataset<Row> vertex_df = sqlContext.createDataFrame(vertices, vertex_df_cols);
         // Create an Edge DataFrame with "src" and "dst" columns
-        Dataset<Row> edge_df = sqlContext.createDataFrame(edges, edge_df_cols.getClass());
+        Dataset<Row> edge_df = sqlContext.createDataFrame(edges, edge_df_cols);
 
         // Collect data
         ArrayList<Long[]> data = new ArrayList<>();
