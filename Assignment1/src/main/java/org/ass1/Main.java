@@ -1,6 +1,5 @@
 package org.ass1;
 
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.sql.*;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
@@ -29,15 +28,11 @@ public class Main {
         try (BufferedReader br = new BufferedReader(new FileReader(edge_path.toAbsolutePath().toString()))) {
             String line;
             String[] edge;
-            String[] complete_edge = new String[3];
             while ((line = br.readLine()) != null) {
                 if (line.startsWith("#"))
                     continue;
                 edge = line.split("\t");
-                complete_edge[0] = edge[0];
-                complete_edge[1] = edge[1];
-                complete_edge[2] = "cites";
-                edges.add(RowFactory.create(complete_edge));
+                edges.add(RowFactory.create(edge));
                 vertices_map.put(edge[0], "");
                 vertices_map.put(edge[1], "");
             }
@@ -87,8 +82,7 @@ public class Main {
 
         StructType edge_df_cols = DataTypes.createStructType(new StructField[] {
                 DataTypes.createStructField("src", DataTypes.StringType, true),
-                DataTypes.createStructField("dst", DataTypes.StringType, true),
-                DataTypes.createStructField("relationship", DataTypes.StringType, true)
+                DataTypes.createStructField("dst", DataTypes.StringType, true)
         });
 
 
@@ -97,23 +91,32 @@ public class Main {
         // Create an Edge DataFrame with "src" and "dst" columns
         Dataset<Row> edge_df = sqlContext.createDataFrame(edges, edge_df_cols);
 
+        // Filter out vertices that don't have a published date
+        vertex_df = vertex_df.filter("published_year != \"\"");
+
+        // Note don't need to filter out edges since the algorithms employed below do that already
+
         // Collect data
-        ArrayList<Long[]> data = new ArrayList<>();
-        long num_vertices = 0;
-        long num_edges = 0;
+        ArrayList<ArrayList<Long>> data = new ArrayList<>();
+        long num_vertices;
+        long num_edges;
 
         for (long year : years) {
             // Collect number of vertices by year
             Dataset<Row> vertices_by_year_df = vertex_df.filter(vertex_df.col("published_year").$less$eq(year));
-            vertices_by_year_df.show(10);
             num_vertices = vertices_by_year_df.count();
 
             // Collect number of out edges by year
             Dataset<Row> edges_by_year = vertices_by_year_df.join(edge_df, vertices_by_year_df.col("id").equalTo(edge_df.col("src")), "inner");
-            edges_by_year.groupBy("src").count().select(sum("count")).show(10);
+            num_edges = (long) edges_by_year.groupBy("src").count().select(sum("count")).collectAsList().get(0).get(0);
 
             // Store data
-            data.add(new Long[]{year, num_vertices, num_edges});
+            ArrayList<Long> vals = new ArrayList<>();
+            vals.add(year);
+            vals.add(num_vertices);
+            vals.add(num_edges);
+
+            data.add(vals);
         }
 
         System.out.println(vertex_df.count());
