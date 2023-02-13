@@ -22,7 +22,7 @@ public class EffectiveDiameter {
             int fromNode = Integer.parseInt(fields[0]);
             int toNode = Integer.parseInt(fields[1]);
             List<Tuple2<Integer, Tuple2<Integer, Integer>>> results = new ArrayList<>();
-            for (int year = 1980; year <= 2020; year++) {
+            for (int year = 1993; year <= 2003; year++) {
                 results.add(new Tuple2<>(year, new Tuple2<>(fromNode, toNode)));
             }
             return results.iterator();
