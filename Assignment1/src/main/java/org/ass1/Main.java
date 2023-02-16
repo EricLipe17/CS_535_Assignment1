@@ -7,14 +7,6 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import static org.apache.spark.sql.functions.*;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Serializable;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-
 public class Main {
     public static void main(String[] args)  {
         SparkSession spark = SparkSession
@@ -48,12 +40,6 @@ public class Main {
 
         vertex_df = properties.join(vertex_df, properties.col("id").equalTo(vertex_df.col("id_old"))).drop("id_old");
 
-        // Create data containers
-        ArrayList<ArrayList<Long>> vertices_edges_by_year = new ArrayList<>();
-        ArrayList<ArrayList<Long>> paths_by_year = new ArrayList<>();
-        long num_vertices;
-        long num_edges;
-
         // Execute algorithms on each subgraph
         for (long year = 1993; year < 1994; year++) {
             // Collect number of vertices for this subgraph
@@ -72,7 +58,7 @@ public class Main {
 
             // Evaluate g(d) where 1 <= d <= 4
             Dataset<Row> dst = edges_by_year.select("dst").withColumnRenamed("dst", "dst_original").dropDuplicates();
-            Dataset<Row> summed_dst = dst.groupBy("dst_original").count().select(sum("count"));
+            Dataset<Row> summed_dst = dst.groupBy("dst_original").count().select(sum("count")); // TODO: for some reason this gives the wrong answer now
             summed_dst.coalesce(1).write().mode(SaveMode.Overwrite).option("header", true).csv(String.format("/output/num_paths_g1_%d.csv", year));
             for (int i = 2; i < 5; i++) {
                 Dataset<Row> new_src = dst.alias("dst").join(edges_by_year.alias("edges"), col("dst.dst_original").equalTo(col("edges.src")), "inner").drop("dst_original");
