@@ -3,7 +3,7 @@ pushd ~
 if [[ "$1" != "" ]]; then
     JAR="$1"
 else
-    JAR=.
+    JAR="Assignment1-1.0.jar"
 fi
 
 if [[ "$2" != "" ]]; then
