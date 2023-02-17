@@ -41,7 +41,7 @@ public class Main {
         vertex_df = properties.join(vertex_df, properties.col("id").equalTo(vertex_df.col("id_old"))).drop("id_old");
 
         // Execute algorithms on each subgraph
-        for (long year = 1993; year < 1994; year++) {
+        for (long year = 1993; year < 2003; year++) {
             // Collect number of vertices for this subgraph
             Dataset<Row> vertices_by_year_df = vertex_df.filter(vertex_df.col("published_year").$less$eq(year));
             Dataset<Row> num_verts = vertices_by_year_df.groupBy("published_year").count().select(sum("count")).withColumnRenamed("sum(count)", "num_vertices");
@@ -57,12 +57,12 @@ public class Main {
             v_e_data.coalesce(1).write().mode(SaveMode.Overwrite).option("header", true).csv(String.format("/output/numVerts_numOutEdges_%d.csv", year));
 
             // Evaluate g(d) where 1 <= d <= 4
-            Dataset<Row> dst = edges_by_year.select("dst").withColumnRenamed("dst", "dst_original").dropDuplicates();
-            Dataset<Row> summed_dst = num_verts.drop("row_id");
+            Dataset<Row> dst = edges_by_year.select("dst").withColumnRenamed("dst", "dst_original");
+            Dataset<Row> summed_dst = dst.groupBy("dst_original").count().select(sum("count"));
             summed_dst.coalesce(1).write().mode(SaveMode.Overwrite).option("header", true).csv(String.format("/output/num_paths_g1_%d.csv", year));
             for (int i = 2; i < 5; i++) {
                 Dataset<Row> new_src = dst.alias("dst").join(edges_by_year.alias("edges"), col("dst.dst_original").equalTo(col("edges.src")), "inner").drop("dst_original");
-                dst = new_src.select("dst").withColumnRenamed("dst", "dst_original").dropDuplicates();
+                dst = new_src.select("dst").withColumnRenamed("dst", "dst_original");
                 summed_dst = dst.groupBy("dst_original").count().select(sum("count"));
                 summed_dst.coalesce(1).write().mode(SaveMode.Overwrite).option("header", true).csv(String.format("/output/num_paths_g%d_%d.csv", i, year));
             }
