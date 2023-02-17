@@ -5,16 +5,8 @@ import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import static org.apache.spark.sql.functions.*;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Serializable;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-
-public class Main() {
-        public static void main(String[] args)  {
+public class Main {
+    public static void main(String[] args)  {
         SparkSession spark = SparkSession
                 .builder()
                 .appName("Assignment1")
@@ -46,75 +38,49 @@ public class Main() {
 
         vertex_df = properties.join(vertex_df, properties.col("id").equalTo(vertex_df.col("id_old"))).drop("id_old");
 
-        // Create data containers
-        ArrayList<ArrayList<Long>> vertices_edges_by_year = new ArrayList<>();
-        ArrayList<ArrayList<Long>> paths_by_year = new ArrayList<>();
-        long num_vertices;
-        long num_edges;
-            
         // Execute algorithms on each subgraph
         for (long year = 1993; year < 2003; year++) {
             // Collect number of vertices for this subgraph
             Dataset<Row> vertices_by_year_df = vertex_df.filter(vertex_df.col("published_year").$less$eq(year));
-            num_vertices = vertices_by_year_df.count();
+            Dataset<Row> num_verts = vertices_by_year_df.groupBy("published_year").count().select(sum("count")).withColumnRenamed("sum(count)", "num_vertices");
+            num_verts = num_verts.withColumn("row_id", row_number().over(Window.orderBy(lit(1))));
 
             // Collect number of out edges for this subgraph
             Dataset<Row> edges_by_year = vertices_by_year_df.join(edge_df, vertices_by_year_df.col("id").equalTo(edge_df.col("src")), "inner");
-            num_edges = (long) edges_by_year.groupBy("src").count().select(sum("count")).collectAsList().get(0).get(0);
+            Dataset<Row> out_edges = edges_by_year.groupBy("src").count().select(sum("count")).withColumnRenamed("sum(count)", "num_out_edges");
+            out_edges = out_edges.withColumn("row_id", row_number().over(Window.orderBy(lit(1))));
 
-            // Evaluate g(d) where 1 <= d <= 4
-            ArrayList<Long> distribution = new ArrayList<>(4);
-            distribution.add(vertices_by_year_df.count());
-            Dataset<Row> dst = edges_by_year.select("dst").withColumnRenamed("dst", "dst_original").dropDuplicates();
-            for (int i = 0; i < 3; i++) {
-                Dataset<Row> new_src = dst.alias("dst").join(edges_by_year.alias("edges"), col("dst.dst_original").equalTo(col("edges.src")), "inner").drop("dst_original");
-                dst = new_src.select("dst").withColumnRenamed("dst", "dst_original").dropDuplicates();
-                distribution.add(dst.distinct().count());
+            // Write data
+            Dataset<Row> v_e_data = num_verts.join(out_edges, num_verts.col("row_id").equalTo(out_edges.col("row_id")), "inner").drop("row_id");
+            v_e_data.coalesce(1).write().mode(SaveMode.Overwrite).option("header", true).csv(String.format("/output/numVerts_numOutEdges_%d.csv", year));
+            
+
+            for (int d = 1; d <= 4; d++) {
+                Dataset<Row> counts_1 = v_e_data.filter(String.format("g1 = %d AND g2 = %d", d, d)).selectExpr("sum(count) as count_sum_1");
+                Dataset<Row> counts_2 = v_e_data.filter(String.format("g3 = %d AND g4 = %d", d, d)).selectExpr("sum(count) as count_sum_2");
+                long total_pairs = v_e_data.filter("g1 = 1").agg(sum("count")).head().getLong(0);
+                long count_sum = counts.head().getLong(0);
+                double cdf = (double) count_sum / total_pairs;
+
+                double x = 0.9;
+                int left = d, right = 100;
+                while (left < right) {
+                    int mid = left + (right - left) / 2;
+                    counts = v_e_data.filter(String.format("g1 = %d AND g2 = %d", d, mid)).selectExpr("sum(count) as count_sum");
+                    count_sum = counts.head().getLong(0);
+                    cdf = (double) count_sum / total_pairs;
+                    if (cdf < x) {
+                        left = mid + 1;
+                    } else {
+                        right = mid;
+                    }
+                }
+                int effective_diameter = left;
+                System.out.println("Year: " + year + ", Distance: " + d + ", Effective Diameter: " + effective_diameter);
             }
 
-         // Save vertex and edge counts for this subgraph
-         ArrayList<Long> vertices_edges = new ArrayList<>(2);
-         vertices_edges.add(num_vertices);
-         vertices_edges.add(num_edges);
-         vertices_edges_by_year.add(vertices_edges);
+            v_e_data.coalesce(1).write().mode(SaveMode.Overwrite).option("header", true).csv(String.format("/output/numVerts_numOutEdges_%d.csv", year));
+}
 
-         // Save distribution for this subgraph
-         paths_by_year.add(distribution);
-        }
-
-        // Determine total number of connected node pairs
-        ArrayList<Long> connected_node_pairs = new ArrayList<>(10);
-        for (int i = 0; i < 10; i++) {
-            long count = 0;
-            for (ArrayList<Long> paths: paths_by_year) {
-                count += paths.get(i);
-            }
-            connected_node_pairs.add(count);
-        }
-        long total_connected_node_pairs = connected_node_pairs.stream().mapToLong(Long::longValue).sum();
-
-        // Calculate effective diameter for each year
-        for (int i = 0; i < 9; i++) {
-            long cumulative_count = 0;
-            int lower_bound = i + 1;
-            int upper_bound = i + 2;
-            long d_lower = lower_bound;
-            long d_upper = upper_bound;
-            long g_lower = connected_node_pairs.get(i);
-            long g_upper = connected_node_pairs.get(i + 1);
-            for (ArrayList<Long> paths: paths_by_year) {
-                cumulative_count += paths.get(i);
-            }
-            while (d_upper <= 4 && cumulative_count / (double)total_connected_node_pairs < 0.9) {
-                cumulative_count += connected_node_pairs.get(upper_bound - 1);
-                upper_bound++;
-                d_upper++;
-                g_upper = connected_node_pairs.get(upper_bound - 1);
-            }
-            double x = (cumulative_count / (double)total_connected_node_pairs - (g_upper / (double)total_connected_node_pairs)) /
-                    ((g_lower / (double)total_connected_node_pairs) - (g_upper / (double)total_connected_node_pairs));
-            double effective_diameter = d_lower + x;
-            System.out.println("Effective diameter for year " + (i + 1993) + ": " + effective_diameter);
-        }//end for loop
-    }//end function main
-}// end class Main
+                
+            
