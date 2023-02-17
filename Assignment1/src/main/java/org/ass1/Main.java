@@ -57,11 +57,11 @@ public class Main {
             v_e_data.coalesce(1).write().mode(SaveMode.Overwrite).option("header", true).csv(String.format("/output/numVerts_numOutEdges_%d.csv", year));
 
             // Evaluate g(d) where 1 <= d <= 4
-            Dataset<Row> dst = edges_by_year.select("dst").withColumnRenamed("dst", "dst_original");
+            Dataset<Row> dst = edges_by_year.dropDuplicates().select("dst").withColumnRenamed("dst", "dst_original");
             Dataset<Row> summed_dst = dst.groupBy("dst_original").count().select(sum("count"));
             summed_dst.coalesce(1).write().mode(SaveMode.Overwrite).option("header", true).csv(String.format("/output/num_paths_g1_%d.csv", year));
             for (int i = 2; i < 5; i++) {
-                Dataset<Row> new_src = dst.alias("dst").join(edges_by_year.alias("edges"), col("dst.dst_original").equalTo(col("edges.src")), "inner").drop("dst_original");
+                Dataset<Row> new_src = dst.alias("dst").join(edges_by_year.alias("edges"), col("dst.dst_original").equalTo(col("edges.src")), "inner").drop("dst_original").dropDuplicates();
                 dst = new_src.select("dst").withColumnRenamed("dst", "dst_original");
                 summed_dst = dst.groupBy("dst_original").count().select(sum("count"));
                 summed_dst.coalesce(1).write().mode(SaveMode.Overwrite).option("header", true).csv(String.format("/output/num_paths_g%d_%d.csv", i, year));
