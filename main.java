@@ -55,31 +55,39 @@ public class Main {
             v_e_data.coalesce(1).write().mode(SaveMode.Overwrite).option("header", true).csv(String.format("/output/numVerts_numOutEdges_%d.csv", year));
             
 
-            for (int d = 1; d <= 4; d++) {
-                Dataset<Row> counts_1 = v_e_data.filter(String.format("g1 = %d AND g2 = %d", d, d)).selectExpr("sum(count) as count_sum_1");
-                Dataset<Row> counts_2 = v_e_data.filter(String.format("g3 = %d AND g4 = %d", d, d)).selectExpr("sum(count) as count_sum_2");
-                long total_pairs = v_e_data.filter("g1 = 1").agg(sum("count")).head().getLong(0);
-                long count_sum = counts.head().getLong(0);
-                double cdf = (double) count_sum / total_pairs;
+            // Calculate effective diameter
+            int maxDistance = -1;
+            for (long year = 1993; year < 2003; year++) {
+                Dataset<Row> subgraph_vertices = vertex_df.filter(vertex_df.col("published_year").$less$eq(year));
+                Dataset<Row> subgraph_edges = subgraph_vertices.join(edge_df, subgraph_vertices.col("id").equalTo(edge_df.col("src")), "inner");
 
-                double x = 0.9;
-                int left = d, right = 100;
-                while (left < right) {
-                    int mid = left + (right - left) / 2;
-                    counts = v_e_data.filter(String.format("g1 = %d AND g2 = %d", d, mid)).selectExpr("sum(count) as count_sum");
-                    count_sum = counts.head().getLong(0);
-                    cdf = (double) count_sum / total_pairs;
-                    if (cdf < x) {
-                        left = mid + 1;
-                    } else {
-                        right = mid;
-                    }
+                // Generate all pairs of vertices
+                Dataset<Row> vertex_pairs = subgraph_vertices.crossJoin(subgraph_vertices)
+                        .filter(col("id").notEqual(col("id1")))
+                        .withColumnRenamed("id", "source")
+                        .withColumnRenamed("published_year", "source_year")
+                        .withColumnRenamed("id1", "destination")
+                        .withColumnRenamed("published_year1", "destination_year");
+
+                // Calculate distances for each vertex pair
+                Dataset<Row> distances = vertex_pairs.join(subgraph_edges, vertex_pairs.col("source").equalTo(subgraph_edges.col("src"))
+                        .and(vertex_pairs.col("destination").equalTo(subgraph_edges.col("dst"))), "left")
+                        .withColumn("distance", when(col("src").isNull(), lit(Integer.MAX_VALUE)).otherwise(lit(1)))
+                        .groupBy("source", "source_year", "destination", "destination_year")
+                        .agg(min("distance").alias("distance"))
+                        .cache();
+
+                // Find max distance for this subgraph
+                int subgraphMaxDistance = distances.select(max("distance")).first().getInt(0);
+
+                if (subgraphMaxDistance > maxDistance) {
+                    maxDistance = subgraphMaxDistance;
                 }
-                int effective_diameter = left;
-                System.out.println("Year: " + year + ", Distance: " + d + ", Effective Diameter: " + effective_diameter);
             }
 
-            v_e_data.coalesce(1).write().mode(SaveMode.Overwrite).option("header", true).csv(String.format("/output/numVerts_numOutEdges_%d.csv", year));
+            // Output max distance
+            System.out.println("Effective diameter: " + maxDistance);
+
 }
 
                 
